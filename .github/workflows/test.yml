@@ -1,0 +1,23 @@
+name: Test Suite
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_call:
+
+jobs:
+  test_basic:
+    runs-on: ubuntu-latest
+    name: Recommended
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Test deployment tracker
+        uses: ./
+        env:
+          SHIPBOT_API_KEY: ${{ secrets.SHIPBOT_API_KEY }}
+        with:
+          artifactName: my-test-service
