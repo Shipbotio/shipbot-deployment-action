@@ -14,6 +14,9 @@ inputs:
   artifactName:
     description: 'Either artifactId or artifactName is required. If an artifact hasn't been created this can be ommited and the name will create a new artifact. Artifacts can be created and managed using the API or [Terraform module](https://docs.shipbot.io/docs/sdks/terraform) if desired.'
     required: false
+  version:
+    description: 'The version can be any string.'
+    required: true
   environment:
     description: 'This should match the environment created in Current Version. By default `PRODUCTION` is created.'
     required: true
@@ -46,7 +49,7 @@ outputs:
     description: 'Shipbot deployment ID.'
 runs:
   using: 'docker'
-  image: 'python-3.12.8-alpine3.21'
+  image: 'python/python-3.12.8-alpine3.21'
   env:
     SHIPBOT_API_KEY: ${{ inputs.apiKey }}
     SHIPBOT_ARTIFACT_ID: ${{ inputs.artifactId }}

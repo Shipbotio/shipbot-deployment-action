@@ -1,9 +1,11 @@
 ```bash
 brew install act
 
+cp act.secrets.sample act.secrets
+
 #
-act
+act --secret-file act.secrets
 
 # If on M series Mac:
-act --container-architecture linux/amd64
+act --secret-file act.secrets --container-architecture linux/amd64
 ```
