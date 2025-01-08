@@ -9,19 +9,19 @@ inputs:
     description: 'Your Shipbot.io API Key.'
     required: true
   artifactId:
-    description: 'Either artifactId or artifactName is required. If an artifact hasn't been created this can be ommited and the name will create a new artifact. Artifacts can be created and managed using the API or [Terraform module](https://docs.shipbot.io/docs/sdks/terraform) if desired.'
+    description: 'Either artifactId or artifactName is required.'
     required: false
   artifactName:
-    description: 'Either artifactId or artifactName is required. If an artifact hasn't been created this can be ommited and the name will create a new artifact. Artifacts can be created and managed using the API or [Terraform module](https://docs.shipbot.io/docs/sdks/terraform) if desired.'
+    description: 'Either artifactId or artifactName is required.'
     required: false
   version:
     description: 'The version can be any string.'
     required: true
   environment:
-    description: 'This should match the environment created in Current Version. By default `PRODUCTION` is created.'
+    description: 'This should match the environment created in Current Version. By default PRODUCTION is created.'
     required: true
   status:
-    description: 'Current status of deployment, should be one of `STARTED`, `SUCCEEDED`, `FAILED`.'
+    description: 'Current status of deployment, should be one of STARTED, SUCCEEDED, FAILED.'
     required: false
     default: SUCCEEDED
   changelog:
