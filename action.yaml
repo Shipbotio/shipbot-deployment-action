@@ -31,7 +31,7 @@ inputs:
     description: 'The Commit SHA for this deployment.'
     required: false
   description:
-    description: 'This can be further information on the deployment that wouldn't be considered part of the changelog.'
+    description: 'This can be further information on the deployment that would not be considered part of the changelog.'
     required: false
   link:
     description: 'This should link to an external place where more action on the deployment can take place for example it could be the deployment job in your CI/CD pipeline.'
