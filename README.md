@@ -35,7 +35,65 @@ The examples below use a number of [default GitHub environment variables](https:
 From the below add the two jobs to your relevant Github workflow file.
 
 ```yaml
-TBD
+name: Deploy Lambda Functions
+
+# Trigger the workflow on changes to the 'functions/' directory
+on:
+  push:
+    branches:
+      - main
+
+# Define jobs
+jobs:
+  deploy-code:
+    name: Deploy Code
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Log deployment
+      - name: Log Deployment
+        uses: Shipbotio/shipbot-deployment-action@v1
+        with:
+          apiKey: ${{ secrets.SHIPBOT_API_KEY }}
+          artifactName: ${{ matrix.lambda_folder }}
+          environment: "PRODUCTION"
+          version: ${{ github.ref }}
+          commitSha: ${{ github.ref }}
+          link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          user: ${{ github.actor }}
+          status: "STARTED"
+
+      # Deploy Lambda function
+      - name: Deploy Code
+        run: |
+          echo "Deploying code."
+
+      - name: Mark deployment as succeeded
+        if: always()
+        uses: Shipbotio/shipbot-deployment-action@v1
+        with:
+          apiKey: ${{ secrets.SHIPBOT_API_KEY }}
+          deploymentId: ${{ steps.log_deployment.outputs.deploymentId }}
+          status: ${{ job.status == 'success' && 'SUCCEEDED' || 'FAILED' }}
+```
+
+If you wish to just track successful deployments you can omit the `status` parameter.
+
+```yaml
+      - name: Log Deployment
+        uses: Shipbotio/shipbot-deployment-action@v1
+        with:
+          apiKey: ${{ secrets.SHIPBOT_API_KEY }}
+          artifactName: ${{ matrix.lambda_folder }}
+          environment: "PRODUCTION"
+          version: ${{ github.ref }}
+          commitSha: ${{ github.ref }}
+          link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          user: ${{ github.actor }}
 ```
 
 ## Versioning
