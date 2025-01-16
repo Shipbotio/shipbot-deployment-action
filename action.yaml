@@ -1,6 +1,6 @@
 name: 'Shipbot.io Deployment Tracker'
 author: 'Shipbot.io'
-description: 'Easily track deployments in Shipbot.io using this Github Action.'
+description: 'Easily track deployments in Shipbot.io using Github Actions.'
 branding:
   icon: 'upload-cloud'
   color: '#2362EB'
