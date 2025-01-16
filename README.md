@@ -36,3 +36,10 @@ From the below add the two jobs to your relevant Github workflow file.
 ```yaml
 TBD
 ```
+
+## Versioning
+
+This action follows semantic versioning. You can:
+- Use a specific version: `uses: Shipbotio/shipbot-deployment-action@v1.0.1`
+- Use the latest version of a major release: `uses: Shipbotio/shipbot-deployment-action@v1`
+- Use the latest version (not recommended): `uses: Shipbotio/shipbot-deployment-action@master`

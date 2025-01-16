@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'action.yaml'
+      - 'shipbot/**'
+      - 'Dockerfile'
+      - 'requirements.txt'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $LATEST_TAG"
+
+      - name: Check for relevant changes
+        id: check_changes
+        run: |
+          # Compare multiple files/directories with latest tag
+          if git diff ${{ steps.get_latest_tag.outputs.latest_tag }} -- \
+            action.yaml \
+            shipbot/ \
+            Dockerfile \
+            requirements.txt | grep -q .; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected in monitored files"
+            
+            # Create changelog
+            echo "changelog<<EOF" >> $GITHUB_OUTPUT
+            echo "Changes in this release:" >> $GITHUB_OUTPUT
+            
+            # Check each path separately and add to changelog
+            for path in "action.yaml" "shipbot/" "Dockerfile" "requirements.txt"; do
+              if git diff ${{ steps.get_latest_tag.outputs.latest_tag }} -- "$path" | grep -q .; then
+                echo "- Changes in $path" >> $GITHUB_OUTPUT
+              fi
+            done
+            
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No changes in monitored files"
+          fi
+
+      - name: Increment version
+        if: steps.check_changes.outputs.changes == 'true'
+        id: version
+        run: |
+          CURRENT_VERSION=${LATEST_TAG#v}
+          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]}"
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="v$MAJOR.$MINOR.$NEW_PATCH"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Create Release
+        if: steps.check_changes.outputs.changes == 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.new_version }}
+          release_name: Release ${{ steps.version.outputs.new_version }}
+          body: |
+            ${{ steps.check_changes.outputs.changelog }}
+            
+            For more details, see the [full diff](https://github.com/${{ github.repository }}/compare/${{ steps.get_latest_tag.outputs.latest_tag }}...${{ steps.version.outputs.new_version }})
+          draft: false
+          prerelease: false
+
+      - name: Update major version tag
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          MAJOR_VERSION="v$(echo ${{ steps.version.outputs.new_version }} | cut -d. -f1)"
+          git tag -d $MAJOR_VERSION || true
+          git push origin :refs/tags/$MAJOR_VERSION || true
+          git tag $MAJOR_VERSION
+          git push origin $MAJOR_VERSION 
