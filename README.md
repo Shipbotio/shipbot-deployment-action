@@ -19,6 +19,7 @@ This Github action makes it easy to track deployments from your Github actions.
 | `link`| ❌       | This should link to an external place where more action on the deployment can take place for example it could be the deployment job in your CI/CD pipeline. |
 | `type`| ❌       | This is a enum describing the deployment strategy. The only option right now is SIMPLE. |
 | `user`| ❌       | This can be any string, for example name or email but ideally it is `github.actor` which is the default when using the Github Action. We will link this to Slack users within Shipbot.io once said user has logged into Shipbot.io and connected with Github. |
+| `logLevel`| ❌       | Log level (DEBUG, INFO, WARNING, ERROR). |
 
 ## Example usage
 

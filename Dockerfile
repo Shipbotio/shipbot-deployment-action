@@ -1,7 +1,6 @@
-FROM python:3.12.8-alpine3.21
+FROM python:3.12-alpine
 
-COPY . /app
 WORKDIR /app
-RUN pip install -r requirements.txt
+COPY shipbot/ /app/shipbot/
 
 ENTRYPOINT ["python", "/app/shipbot/main.py"]

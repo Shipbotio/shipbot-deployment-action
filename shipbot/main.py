@@ -1,7 +1,10 @@
 import os
 import logging
 import sys
-import requests
+import json
+import urllib.request
+import urllib.error
+from urllib.parse import urljoin
 
 # Get log level from environment variable, default to INFO
 log_level = os.getenv('SHIPBOT_LOG_LEVEL', 'INFO').upper()
@@ -71,44 +74,58 @@ def main(argv):
 
     # Make the POST request
     try:
-        response = requests.post(f'{SHIPBOT_API_HOST}/deployment', headers=headers, json=payload)
-        response.raise_for_status()  # Raises an HTTPError for bad responses (4xx, 5xx)
+        # Create request
+        url = urljoin(SHIPBOT_API_HOST, '/deployment')
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers=headers,
+            method='POST'
+        )
         
-        log.info(f'Status Code: {response.status_code}')
-        try:
-            log.info(f'Response: {response.json()}')
-        except requests.exceptions.JSONDecodeError:
-            log.info(f'Response: {response.text}')
+        # Make the request
+        with urllib.request.urlopen(req) as response:
+            status_code = response.status
+            try:
+                response_data = json.loads(response.read().decode('utf-8'))
+                log.info(f'Response: {response_data}')
+            except json.JSONDecodeError:
+                response_data = response.read().decode('utf-8')
+                log.info(f'Response: {response_data}')
+
+            log.info(f'Status Code: {status_code}')
+            
+            if 200 <= status_code < 300:
+                log.info('✅ Deployment successfully tracked in Shipbot')
+            else:
+                handle_error('❌ Deployment failed to track in Shipbot')
         
-        if response.ok:
-            log.info('✅ Deployment successfully tracked in Shipbot')
-        else:
-            log.error('❌ Deployment failed to track in Shipbot')
-        
-    except requests.exceptions.HTTPError as e:
-        if response.status_code == 401:
-            handle_error('❌ API Key was rejected by Shipbot', e)
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            handle_error('❌ API Key was rejected by Shipbot')
             log.debug(f'API Key used: {API_KEY}')
-        elif response.status_code == 422:
+        elif e.code == 422:
             log.error('❌ Invalid payload sent to Shipbot')
             log.info(f'Payload sent: {payload}')
             try:
-                log.info(f'Error response: {response.json()}')
-            except requests.exceptions.JSONDecodeError:
-                log.info(f'Error response: {response.text}')
+                error_data = json.loads(e.read().decode('utf-8'))
+                log.info(f'Error response: {error_data}')
+            except json.JSONDecodeError:
+                log.info(f'Error response: {e.read().decode("utf-8")}')
             handle_error('Invalid payload', e)
-        elif response.status_code >= 500:
+        elif e.code >= 500:
             log.error('❌ Shipbot server error occurred')
             log.debug(f'Payload sent: {payload}')
             try:
-                log.debug(f'Error response: {response.json()}')
-            except requests.exceptions.JSONDecodeError:
-                log.debug(f'Error response: {response.text}')
+                error_data = json.loads(e.read().decode('utf-8'))
+                log.debug(f'Error response: {error_data}')
+            except json.JSONDecodeError:
+                log.debug(f'Error response: {e.read().decode("utf-8")}')
             handle_error('Server error', e)
         else:
             handle_error(f'Error making request: {e}', e)
-
-    except requests.exceptions.RequestException as e:
+    except urllib.error.URLError as e:
         handle_error(f'Error making request: {e}', e)
 
 if __name__ == "__main__":

@@ -4,6 +4,9 @@ description: 'Easily track deployments in Shipbot.io using Github Actions.'
 branding:
   icon: 'upload-cloud'
   color: 'blue'
+categories:
+  - Deployment
+  - Continuous integration
 inputs:
   apiKey:
     description: 'Your Shipbot.io API Key.'
