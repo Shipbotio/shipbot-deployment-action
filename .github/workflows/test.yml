@@ -18,7 +18,10 @@ jobs:
       - name: Test deployment tracker
         uses: ./
         with:
+          logLevel: DEBUG
+          apiHost: ${{ secrets.SHIPBOT_API_HOST }}
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
           artifactName: my-test-service
           environment: PRODUCTION
           version: 0.0.1
+          description: This is a test deployment
