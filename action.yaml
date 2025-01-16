@@ -19,10 +19,10 @@ inputs:
     required: false
   version:
     description: 'The version can be any string.'
-    required: true
+    required: false
   environment:
     description: 'This should match the environment created in Current Version. By default PRODUCTION is created.'
-    required: true
+    required: false
   status:
     description: 'Current status of deployment, should be one of STARTED, SUCCEEDED, FAILED.'
     required: false
@@ -59,9 +59,12 @@ inputs:
     description: 'How to handle errors (HARD or SOFT). HARD will fail the GitHub action, SOFT will only log errors.'
     required: false
     default: 'HARD'
+  deploymentId:
+    description: 'Optional: ID of an existing deployment to update its status'
+    required: false
 outputs:
   deploymentId:
-    description: 'Shipbot deployment ID.'
+    description: 'Shipbot deployment ID for status updates'
 runs:
   using: 'docker'
   image: 'Dockerfile'
@@ -70,6 +73,7 @@ runs:
     SHIPBOT_API_KEY: ${{ inputs.apiKey }}
     SHIPBOT_ARTIFACT_ID: ${{ inputs.artifactId }}
     SHIPBOT_ARTIFACT_NAME: ${{ inputs.artifactName }}
+    SHIPBOT_DEPLOYMENT_ID: ${{ inputs.deploymentId }}
     SHIPBOT_VERSION: ${{ inputs.version }}
     SHIPBOT_ENVIRONMENT: ${{ inputs.environment }}
     SHIPBOT_STATUS: ${{ inputs.status }}

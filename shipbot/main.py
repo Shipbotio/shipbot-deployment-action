@@ -38,35 +38,65 @@ def main(argv):
     if not API_KEY:
         raise ValueError('API_KEY is required')
 
+    # Get deployment ID
+    deployment_id = os.getenv('SHIPBOT_DEPLOYMENT_ID')
+
+    if deployment_id is not None and deployment_id != '':
+        log.info(f'Updating deployment {deployment_id}')
+
+        # For deployment updates, validate status
+        status = os.getenv('SHIPBOT_STATUS')
+        if status not in ['SUCCEEDED', 'FAILED']:
+            raise ValueError('SHIPBOT_STATUS must be either SUCCEEDED or FAILED when updating deployment')
+
+        url = urljoin(SHIPBOT_API_HOST, f'/deployment/{deployment_id}')
+        method = 'PATCH'
+
+        payload = {'status': status}
+    else:
+        log.info(f'Creating new deployment')
+
+        # For new deployments, validate required fields
+        version = os.getenv('SHIPBOT_VERSION')
+        environment = os.getenv('SHIPBOT_ENVIRONMENT')
+        
+        if not version:
+            raise ValueError('SHIPBOT_VERSION is required for new deployments')
+        if not environment:
+            raise ValueError('SHIPBOT_ENVIRONMENT is required for new deployments')
+
+        url = urljoin(SHIPBOT_API_HOST, '/deployment')
+        method = 'POST'
+
+        # Initial payload with required fields
+        payload = {
+            'version': version,
+            'environment': environment,
+            'type': os.getenv('SHIPBOT_TYPE', 'STANDARD')
+        }
+
+        # Add optional fields if they exist
+        optional_fields = {
+            'artifactId': 'SHIPBOT_ARTIFACT_ID',
+            'artifactName': 'SHIPBOT_ARTIFACT_NAME',
+            'status': 'SHIPBOT_STATUS',
+            'changelog': 'SHIPBOT_CHANGE_LOG',
+            'commitSha': 'SHIPBOT_COMMITSHA',
+            'description': 'SHIPBOT_DESCRIPTION',
+            'link': 'SHIPBOT_LINK',
+            'user': 'SHIPBOT_USER'
+        }
+
+        for field, env_var in optional_fields.items():
+            value = os.getenv(env_var)
+            if value is not None and value != '':
+                payload[field] = value
+
     # Headers
     headers = {
         'X-Api-Key': API_KEY,
         'Content-Type': 'application/json'
     }
-
-    # Payload data with required fields
-    payload = {
-        'version': os.getenv('SHIPBOT_VERSION'),
-        'environment': os.getenv('SHIPBOT_ENVIRONMENT'),
-        'type': os.getenv('SHIPBOT_TYPE', 'STANDARD')
-    }
-
-    # Add optional fields if they exist
-    optional_fields = {
-        'artifactId': 'SHIPBOT_ARTIFACT_ID',
-        'artifactName': 'SHIPBOT_ARTIFACT_NAME',
-        'status': 'SHIPBOT_STATUS',
-        'changelog': 'SHIPBOT_CHANGE_LOG',
-        'commitSha': 'SHIPBOT_COMMITSHA',
-        'description': 'SHIPBOT_DESCRIPTION',
-        'link': 'SHIPBOT_LINK',
-        'user': 'SHIPBOT_USER'
-    }
-
-    for field, env_var in optional_fields.items():
-        value = os.getenv(env_var)
-        if value is not None and value != '':
-            payload[field] = value
 
     log.debug(f'Using API host: {SHIPBOT_API_HOST}')
     log.debug(f'Payload: {payload}')
@@ -75,25 +105,25 @@ def main(argv):
     # Make the POST request
     try:
         # Create request
-        url = urljoin(SHIPBOT_API_HOST, '/deployment')
         data = json.dumps(payload).encode('utf-8')
         req = urllib.request.Request(
             url,
             data=data,
             headers=headers,
-            method='POST'
+            method=method
         )
-        
+
         # Make the request
         with urllib.request.urlopen(req) as response:
             status_code = response.status
-            try:
-                response_data = json.loads(response.read().decode('utf-8'))
-                log.info(f'Response: {response_data}')
-            except json.JSONDecodeError:
-                response_data = response.read().decode('utf-8')
-                log.info(f'Response: {response_data}')
-
+            response_data = json.loads(response.read().decode('utf-8'))
+            log.info(f'Response: {response_data}')
+            
+            # Set output for GitHub Actions
+            if 'id' in response_data:
+                with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                    print(f"deploymentId={response_data['id']}", file=f)
+            
             log.info(f'Status Code: {status_code}')
             
             if 200 <= status_code < 300:

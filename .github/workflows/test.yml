@@ -25,3 +25,51 @@ jobs:
           environment: PRODUCTION
           version: 0.0.1
           description: This is a test deployment
+  test_deployment_multiple_steps:
+    runs-on: ubuntu-latest
+    name: Multiple Steps Test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Start deployment
+        id: start_deployment
+        uses: ./
+        with:
+          logLevel: DEBUG
+          apiHost: ${{ secrets.SHIPBOT_API_HOST }}
+          apiKey: ${{ secrets.SHIPBOT_API_KEY }}
+          artifactName: my-test-service
+          environment: PRODUCTION
+          version: 0.0.1
+          status: STARTED
+          description: Starting test deployment
+
+      - name: Simulate deployment work
+        id: deployment_work
+        run: |
+          echo "Simulating deployment work..."
+          sleep 5
+          # Randomly succeed or fail
+          exit $(( RANDOM % 2 ))
+        continue-on-error: true
+
+      - name: Mark deployment as succeeded
+        if: steps.deployment_work.outcome == 'success'
+        uses: ./
+        with:
+          logLevel: DEBUG
+          apiHost: ${{ secrets.SHIPBOT_API_HOST }}
+          apiKey: ${{ secrets.SHIPBOT_API_KEY }}
+          deploymentId: ${{ steps.start_deployment.outputs.deploymentId }}
+          status: SUCCEEDED
+
+      - name: Mark deployment as failed
+        if: steps.deployment_work.outcome == 'failure'
+        uses: ./
+        with:
+          logLevel: DEBUG
+          apiHost: ${{ secrets.SHIPBOT_API_HOST }}
+          apiKey: ${{ secrets.SHIPBOT_API_KEY }}
+          deploymentId: ${{ steps.start_deployment.outputs.deploymentId }}
+          status: FAILED
