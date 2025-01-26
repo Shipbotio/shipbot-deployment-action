@@ -3,126 +3,57 @@ name: Release
 on:
   push:
     branches:
-      - main
-    paths:
-      - 'action.yaml'
-      - 'shipbot/**'
-      - 'Dockerfile'
-      - 'requirements.txt'
+      - master
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # Matches v1.0.0, v2.1.0, etc.
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      
-      - name: Get latest tag
-        id: get_latest_tag
+          fetch-depth: 0  # Fetch all history for tags
+
+      # Get latest patch version for auto-incrementing
+      - name: Get latest patch version
+        id: get_latest
+        if: github.ref == 'refs/heads/master'
         run: |
-          # Get the latest tag or set to v0.0.0 if none exists
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          # Check if this is initial release
-          if ! git rev-parse $LATEST_TAG >/dev/null 2>&1; then
-            echo "is_initial=true" >> $GITHUB_OUTPUT
-            LATEST_TAG="v0.0.0"
+          # Get latest 0.0.x tag
+          LATEST=$(git tag -l 'v0.0.*' | sort -V | tail -n 1)
+          if [ -z "$LATEST" ]; then
+            echo "version=0.0.1" >> $GITHUB_OUTPUT
           else
-            echo "is_initial=false" >> $GITHUB_OUTPUT
+            PATCH=${LATEST##*.}
+            NEXT=$((PATCH + 1))
+            echo "version=0.0.$NEXT" >> $GITHUB_OUTPUT
           fi
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "Latest tag: $LATEST_TAG"
 
-      - name: Check for relevant changes
-        id: check_changes
+      # For manual tag releases, extract version parts
+      - name: Get version from tag
+        id: get_version
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          # For first release, compare with initial commit
-          if ! git rev-parse ${{ steps.get_latest_tag.outputs.latest_tag }} >/dev/null 2>&1; then
-            echo "changes=true" >> $GITHUB_OUTPUT
-            echo "Initial release"
-            
-            echo "changelog<<EOF" >> $GITHUB_OUTPUT
-            echo "Initial release" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          VERSION=${GITHUB_REF#refs/tags/v}
+          MAJOR=${VERSION%%.*}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
 
-          # Compare multiple files/directories with latest tag
-          if git diff ${{ steps.get_latest_tag.outputs.latest_tag }} -- \
-            action.yaml \
-            shipbot/ \
-            Dockerfile \
-            requirements.txt | grep -q .; then
-            echo "changes=true" >> $GITHUB_OUTPUT
-            echo "Changes detected in monitored files"
-            
-            # Create changelog
-            echo "changelog<<EOF" >> $GITHUB_OUTPUT
-            echo "Changes in this release:" >> $GITHUB_OUTPUT
-            
-            # Check each path separately and add to changelog
-            for path in "action.yaml" "shipbot/" "Dockerfile" "requirements.txt"; do
-              if git diff ${{ steps.get_latest_tag.outputs.latest_tag }} -- "$path" | grep -q .; then
-                echo "- Changes in $path" >> $GITHUB_OUTPUT
-              fi
-            done
-            
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "changes=false" >> $GITHUB_OUTPUT
-            echo "No changes in monitored files"
-          fi
-
-      - name: Increment version
-        if: steps.check_changes.outputs.changes == 'true'
-        id: version
+      # Create new patch release for master pushes
+      - name: Create patch release
+        if: github.ref == 'refs/heads/master'
         run: |
-          CURRENT_VERSION="${{ steps.get_latest_tag.outputs.latest_tag }}"
-          # Remove 'v' prefix
-          CURRENT_VERSION=${CURRENT_VERSION#v}
-          
-          # Split version into parts
-          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
-          MAJOR="${VERSION_PARTS[0]:-0}"  # Default to 0 if empty
-          MINOR="${VERSION_PARTS[1]:-0}"  # Default to 0 if empty
-          PATCH="${VERSION_PARTS[2]:-0}"  # Default to 0 if empty
-          
-          if [ "${{ steps.get_latest_tag.outputs.is_initial }}" == "true" ]; then
-            # For initial release, use v0.1.0
-            NEW_VERSION="v0.1.0"
-          else
-            # Increment patch version
-            NEW_PATCH=$((PATCH + 1))
-            NEW_VERSION="v$MAJOR.$MINOR.$NEW_PATCH"
-          fi
-          
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "New version: $NEW_VERSION"
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git tag -a v${{ steps.get_latest.outputs.version }} -m "Release v${{ steps.get_latest.outputs.version }}"
+          git push origin v${{ steps.get_latest.outputs.version }}
 
-      - name: Create Release
-        if: steps.check_changes.outputs.changes == 'true'
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.version.outputs.new_version }}
-          release_name: Release ${{ steps.version.outputs.new_version }}
-          body: |
-            ${{ steps.check_changes.outputs.changelog }}
-            
-            For more details, see the [full diff](https://github.com/${{ github.repository }}/compare/${{ steps.get_latest_tag.outputs.latest_tag }}...${{ steps.version.outputs.new_version }})
-          draft: false
-          prerelease: false
-
+      # Update major version tag for manual releases
       - name: Update major version tag
-        if: steps.check_changes.outputs.changes == 'true'
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          MAJOR_VERSION="v$(echo ${{ steps.version.outputs.new_version }} | cut -d. -f1)"
-          git tag -d $MAJOR_VERSION || true
-          git push origin :refs/tags/$MAJOR_VERSION || true
-          git tag $MAJOR_VERSION
-          git push origin $MAJOR_VERSION 
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git tag -fa v${{ steps.get_version.outputs.major }} -m "Update v${{ steps.get_version.outputs.major }} tag"
+          git push origin v${{ steps.get_version.outputs.major }} --force
