@@ -21,7 +21,7 @@ jobs:
           logLevel: DEBUG
           apiHost: ${{ secrets.SHIPBOT_API_HOST }}
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
-          artifactId: 7
+          artifactConfig: shipbot.json
           commitSha: 1234567890
           user: ${{ github.actor }}
           environment: PRODUCTION
@@ -33,7 +33,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Start deployment
         id: start_deployment
         uses: ./
@@ -41,7 +40,7 @@ jobs:
           logLevel: DEBUG
           apiHost: ${{ secrets.SHIPBOT_API_HOST }}
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
-          artifactId: 7
+          artifactConfig: shipbot.json
           environment: PRODUCTION
           version: 0.0.1
           status: STARTED

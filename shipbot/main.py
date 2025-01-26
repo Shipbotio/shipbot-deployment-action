@@ -32,6 +32,26 @@ def handle_error(message, exception=None):
         else:
             raise RuntimeError(message)
 
+def load_artifact_config(config_path):
+    """Load and validate artifact configuration file"""
+    # Get the workspace directory
+    workspace = os.getenv('GITHUB_WORKSPACE', '.')
+    full_path = os.path.join(workspace, config_path)
+
+    try:
+        log.debug(f'Looking for config file at: {full_path}')
+        with open(full_path, 'r') as f:
+            config = json.load(f)
+
+        if 'artifactId' not in config:
+            raise ValueError(f'artifactId not found in artifact config: {config_path}')
+
+        return config['artifactId']
+    except FileNotFoundError:
+        raise ValueError(f'Artifact config file not found: {config_path}')
+    except json.JSONDecodeError:
+        raise ValueError(f'Invalid JSON in artifact config: {config_path}')
+
 def main(argv):
     # If no API key is provided, throw an error
     API_KEY = os.environ.get('SHIPBOT_API_KEY')
@@ -56,10 +76,18 @@ def main(argv):
     else:
         log.info(f'Creating new deployment')
 
+        # Get artifactId from service config
+        artifact_config = os.getenv('SHIPBOT_ARTIFACT_CONFIG')
+        if not artifact_config:
+            raise ValueError('SHIPBOT_ARTIFACT_CONFIG is required for new deployments')
+
+        log.debug(f'Loading artifact config from: {artifact_config}')
+        artifact_id = load_artifact_config(artifact_config)
+        log.debug(f'Loaded artifactId: {artifact_id} from artifact config')
+
         # For new deployments, validate required fields
         version = os.getenv('SHIPBOT_VERSION')
         environment = os.getenv('SHIPBOT_ENVIRONMENT')
-        artifact_id = os.getenv('SHIPBOT_ARTIFACT_ID')
         commit_sha = os.getenv('SHIPBOT_COMMITSHA')
         user = os.getenv('SHIPBOT_USER')
 
@@ -67,8 +95,6 @@ def main(argv):
             raise ValueError('SHIPBOT_VERSION is required for new deployments')
         if not environment:
             raise ValueError('SHIPBOT_ENVIRONMENT is required for new deployments')
-        if not artifact_id:
-            raise ValueError('SHIPBOT_ARTIFACT_ID is required for new deployments')
         if not commit_sha:
             raise ValueError('SHIPBOT_COMMITSHA is required for new deployments')
         if not user:

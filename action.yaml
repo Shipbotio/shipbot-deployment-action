@@ -11,9 +11,6 @@ inputs:
   apiKey:
     description: 'Your Shipbot.io API Key.'
     required: true
-  artifactId:
-    description: 'ID of the artifact in Shipbot.io'
-    required: false
   version:
     description: 'The version can be any string.'
     required: false
@@ -58,6 +55,9 @@ inputs:
   deploymentId:
     description: 'Optional: ID of an existing deployment to update its status'
     required: false
+  artifactConfig:
+    description: 'Path to service configuration JSON file containing artifactId'
+    required: false
 outputs:
   deploymentId:
     description: 'Shipbot deployment ID for status updates'
@@ -67,7 +67,6 @@ runs:
   env:
     SHIPBOT_API_HOST: ${{ inputs.apiHost }}
     SHIPBOT_API_KEY: ${{ inputs.apiKey }}
-    SHIPBOT_ARTIFACT_ID: ${{ inputs.artifactId }}
     SHIPBOT_DEPLOYMENT_ID: ${{ inputs.deploymentId }}
     SHIPBOT_VERSION: ${{ inputs.version }}
     SHIPBOT_ENVIRONMENT: ${{ inputs.environment }}
@@ -80,3 +79,4 @@ runs:
     SHIPBOT_USER: ${{ inputs.user }}
     SHIPBOT_LOG_LEVEL: ${{ inputs.logLevel }}
     SHIPBOT_FAILURE_MODE: ${{ inputs.failureMode }}
+    SHIPBOT_ARTIFACT_CONFIG: ${{ inputs.artifactConfig }}

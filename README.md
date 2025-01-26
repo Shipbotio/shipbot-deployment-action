@@ -2,13 +2,24 @@
 
 This Github action makes it easy to track deployments from your Github actions.
 
+# Artifact Configuration
+
+Within your artifact directory you can create a `shipbot.json` file to configure the artifact and retain it's ID.
+
+```json
+{
+  "artifactId": 7
+}
+```
+
+This should then be passed to the action using the `artifactConfig` parameter.
 
 ## Inputs
 
 | Parameter     | Required | Description |
 | ------------ | -------- | ----------- |
 | `apiKey`     | ✅       | Shipbot API key (found in Settings). |
-| `artifactId` | ✅       | ID of the artifact in Shipbot.io |
+| `artifactConfig`| ✅      | Path to service configuration JSON file containing artifactId |
 | `version`    | ✅       | The version can be any string. |
 | `environment`| ✅       | This should match the environment created in Current Version. By default `PRODUCTION` is created. |
 | `commitSha`  | ✅       | Commit SHA reference. |
@@ -58,7 +69,7 @@ jobs:
         uses: Shipbotio/shipbot-deployment-action@v1
         with:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
-          artifactName: ${{ matrix.lambda_folder }}
+          artifactConfig: shipbot.json
           environment: "PRODUCTION"
           version: ${{ github.ref }}
           commitSha: ${{ github.ref }}
@@ -87,7 +98,7 @@ If you wish to just track successful deployments you can omit the `status` param
         uses: Shipbotio/shipbot-deployment-action@v1
         with:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
-          artifactName: ${{ matrix.lambda_folder }}
+          artifactId: shipbot.json
           environment: "PRODUCTION"
           version: ${{ github.ref }}
           commitSha: ${{ github.ref }}

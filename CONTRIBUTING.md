@@ -1,6 +1,8 @@
 ```bash
 # Ensure api is running locally.
-# Modify ./github/workflows/test.yml to use your own artifactId.
+
+# Create a shipbot.json file in the root of the repo.
+# Remove file from .gitignore
 
 brew install act
 
