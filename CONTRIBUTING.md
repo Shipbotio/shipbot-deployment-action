@@ -1,4 +1,7 @@
 ```bash
+# Ensure api is running locally.
+# Modify ./github/workflows/test.yml to use your own artifactId.
+
 brew install act
 
 cp act.secrets.sample act.secrets

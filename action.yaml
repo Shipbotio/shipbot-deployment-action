@@ -12,10 +12,7 @@ inputs:
     description: 'Your Shipbot.io API Key.'
     required: true
   artifactId:
-    description: 'Either artifactId or artifactName is required.'
-    required: false
-  artifactName:
-    description: 'Either artifactId or artifactName is required.'
+    description: 'ID of the artifact in Shipbot.io'
     required: false
   version:
     description: 'The version can be any string.'
@@ -32,7 +29,7 @@ inputs:
     required: false
   commitSha:
     description: 'The Commit SHA for this deployment.'
-    required: false
+    required: true
   description:
     description: 'This can be further information on the deployment that would not be considered part of the changelog.'
     required: false
@@ -44,9 +41,8 @@ inputs:
     required: false
     default: STANDARD
   user:
-    description: 'This can be any string, for example name or email but ideally it is `github.actor` which is the default. We will link this to Slack users within Shipbot.io once said user has logged into Shipbot.io and connected with Github.'
-    required: false
-    default: '${{ github.actor }}'
+    description: 'The user initiating the deployment. Will be linked to Slack users within Shipbot.io once the user has logged into Shipbot.io and connected with Github.'
+    required: true
   logLevel:
     description: 'Log level (DEBUG, INFO, WARNING, ERROR)'
     required: false
@@ -72,7 +68,6 @@ runs:
     SHIPBOT_API_HOST: ${{ inputs.apiHost }}
     SHIPBOT_API_KEY: ${{ inputs.apiKey }}
     SHIPBOT_ARTIFACT_ID: ${{ inputs.artifactId }}
-    SHIPBOT_ARTIFACT_NAME: ${{ inputs.artifactName }}
     SHIPBOT_DEPLOYMENT_ID: ${{ inputs.deploymentId }}
     SHIPBOT_VERSION: ${{ inputs.version }}
     SHIPBOT_ENVIRONMENT: ${{ inputs.environment }}

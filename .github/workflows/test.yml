@@ -21,7 +21,9 @@ jobs:
           logLevel: DEBUG
           apiHost: ${{ secrets.SHIPBOT_API_HOST }}
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
-          artifactName: my-test-service
+          artifactId: 7
+          commitSha: 1234567890
+          user: ${{ github.actor }}
           environment: PRODUCTION
           version: 0.0.1
           description: This is a test deployment
@@ -31,7 +33,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Start deployment
         id: start_deployment
         uses: ./
@@ -39,10 +41,12 @@ jobs:
           logLevel: DEBUG
           apiHost: ${{ secrets.SHIPBOT_API_HOST }}
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
-          artifactName: my-test-service
+          artifactId: 7
           environment: PRODUCTION
           version: 0.0.1
           status: STARTED
+          user: ${{ github.actor }}
+          commitSha: 1234567890
           description: Starting test deployment
 
       - name: Simulate deployment work

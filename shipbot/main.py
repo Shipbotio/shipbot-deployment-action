@@ -59,11 +59,20 @@ def main(argv):
         # For new deployments, validate required fields
         version = os.getenv('SHIPBOT_VERSION')
         environment = os.getenv('SHIPBOT_ENVIRONMENT')
-        
+        artifact_id = os.getenv('SHIPBOT_ARTIFACT_ID')
+        commit_sha = os.getenv('SHIPBOT_COMMITSHA')
+        user = os.getenv('SHIPBOT_USER')
+
         if not version:
             raise ValueError('SHIPBOT_VERSION is required for new deployments')
         if not environment:
             raise ValueError('SHIPBOT_ENVIRONMENT is required for new deployments')
+        if not artifact_id:
+            raise ValueError('SHIPBOT_ARTIFACT_ID is required for new deployments')
+        if not commit_sha:
+            raise ValueError('SHIPBOT_COMMITSHA is required for new deployments')
+        if not user:
+            raise ValueError('SHIPBOT_USER is required for new deployments')
 
         url = urljoin(SHIPBOT_API_HOST, '/deployment')
         method = 'POST'
@@ -72,19 +81,18 @@ def main(argv):
         payload = {
             'version': version,
             'environment': environment,
-            'type': os.getenv('SHIPBOT_TYPE', 'STANDARD')
+            'type': os.getenv('SHIPBOT_TYPE', 'STANDARD'),
+            'artifactId': artifact_id,
+            'commitSha': commit_sha,
+            'user': user
         }
 
         # Add optional fields if they exist
         optional_fields = {
-            'artifactId': 'SHIPBOT_ARTIFACT_ID',
-            'artifactName': 'SHIPBOT_ARTIFACT_NAME',
             'status': 'SHIPBOT_STATUS',
             'changelog': 'SHIPBOT_CHANGE_LOG',
-            'commitSha': 'SHIPBOT_COMMITSHA',
             'description': 'SHIPBOT_DESCRIPTION',
-            'link': 'SHIPBOT_LINK',
-            'user': 'SHIPBOT_USER'
+            'link': 'SHIPBOT_LINK'
         }
 
         for field, env_var in optional_fields.items():
@@ -98,9 +106,10 @@ def main(argv):
         'Content-Type': 'application/json'
     }
 
-    log.debug(f'Using API host: {SHIPBOT_API_HOST}')
-    log.debug(f'Payload: {payload}')
-    log.debug(f'Headers: {headers}')
+    log.debug(f'Request URL: {url}')
+    log.debug(f'Request Method: {method}')
+    log.debug(f'Request Payload: {payload}')
+    log.debug(f'Request Headers: {headers}')
 
     # Make the POST request
     try:
@@ -115,23 +124,29 @@ def main(argv):
 
         # Make the request
         with urllib.request.urlopen(req) as response:
+            response_text = response.read().decode('utf-8')
+            log.debug(f'Response Text: {response_text}')
+
             status_code = response.status
-            response_data = json.loads(response.read().decode('utf-8'))
+            response_data = json.loads(response_text)
             log.info(f'Response: {response_data}')
-            
+
             # Set output for GitHub Actions
             if 'id' in response_data:
                 with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                     print(f"deploymentId={response_data['id']}", file=f)
-            
+
             log.info(f'Status Code: {status_code}')
-            
+
             if 200 <= status_code < 300:
                 log.info('✅ Deployment successfully tracked in Shipbot')
             else:
                 handle_error('❌ Deployment failed to track in Shipbot')
-        
+
     except urllib.error.HTTPError as e:
+        error_text = e.read().decode('utf-8')
+        log.debug(f'Error Response Text: {error_text}')
+
         if e.code == 401:
             handle_error('❌ API Key was rejected by Shipbot')
             log.debug(f'API Key used: {API_KEY}')
@@ -139,19 +154,19 @@ def main(argv):
             log.error('❌ Invalid payload sent to Shipbot')
             log.info(f'Payload sent: {payload}')
             try:
-                error_data = json.loads(e.read().decode('utf-8'))
+                error_data = json.loads(error_text)
                 log.info(f'Error response: {error_data}')
             except json.JSONDecodeError:
-                log.info(f'Error response: {e.read().decode("utf-8")}')
+                log.info(f'Error response: {error_text}')
             handle_error('Invalid payload', e)
         elif e.code >= 500:
             log.error('❌ Shipbot server error occurred')
             log.debug(f'Payload sent: {payload}')
             try:
-                error_data = json.loads(e.read().decode('utf-8'))
+                error_data = json.loads(error_text)
                 log.debug(f'Error response: {error_data}')
             except json.JSONDecodeError:
-                log.debug(f'Error response: {e.read().decode("utf-8")}')
+                log.debug(f'Error response: {error_text}')
             handle_error('Server error', e)
         else:
             handle_error(f'Error making request: {e}', e)
