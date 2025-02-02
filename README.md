@@ -24,6 +24,7 @@ This should then be passed to the action using the `artifactConfig` parameter.
 | `environment`| ✅       | This should match the environment created in Current Version. By default `PRODUCTION` is created. |
 | `commitSha`  | ✅       | Commit SHA reference. |
 | `user`       | ✅       | The user initiating the deployment. Will be linked to Slack users within Shipbot.io once the user has logged into Shipbot.io and connected with Github. |
+| `branch`     | ✅       | The branch that is being deployed. |
 | `status`     | ❌       | One of `STARTED`, `SUCCEEDED`, `FAILED`. |
 | `changelog`  | ❌       | This can be a URL to a change log or the changelog notes itself. |
 | `description`| ❌       | This can be further information on the deployment that wouldn't be considered part of the changelog. |
@@ -71,8 +72,9 @@ jobs:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
           artifactConfig: shipbot.json
           environment: "PRODUCTION"
-          version: ${{ github.ref }}
-          commitSha: ${{ github.ref }}
+          version: ${{ github.sha }}
+          commitSha: ${{ github.sha }}
+          branch: ${{ github.ref_name }}
           link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           user: ${{ github.actor }}
           status: "STARTED"
@@ -98,10 +100,11 @@ If you wish to just track successful deployments you can omit the `status` param
         uses: Shipbotio/shipbot-deployment-action@v1
         with:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
-          artifactId: shipbot.json
+          artifactConfig: shipbot.json
           environment: "PRODUCTION"
-          version: ${{ github.ref }}
-          commitSha: ${{ github.ref }}
+          version: ${{ github.sha }}
+          commitSha: ${{ github.sha }}
+          branch: ${{ github.ref_name }}
           link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           user: ${{ github.actor }}
 ```
