@@ -88,17 +88,23 @@ def main(argv):
         # For new deployments, validate required fields
         version = os.getenv('SHIPBOT_VERSION')
         environment = os.getenv('SHIPBOT_ENVIRONMENT')
-        commit_sha = os.getenv('SHIPBOT_COMMITSHA')
+        commit_sha = os.getenv('SHIPBOT_COMMIT_SHA')
         user = os.getenv('SHIPBOT_USER')
+        branch = os.getenv('SHIPBOT_BRANCH')
 
         if not version:
             raise ValueError('SHIPBOT_VERSION is required for new deployments')
         if not environment:
             raise ValueError('SHIPBOT_ENVIRONMENT is required for new deployments')
         if not commit_sha:
-            raise ValueError('SHIPBOT_COMMITSHA is required for new deployments')
+            raise ValueError('SHIPBOT_COMMIT_SHA is required for new deployments')
         if not user:
             raise ValueError('SHIPBOT_USER is required for new deployments')
+        if not branch:
+            raise ValueError('SHIPBOT_BRANCH is required for new deployments')
+
+        log.info(f'Commit SHA: {commit_sha}')
+        log.info(f'Branch: {branch}')
 
         url = urljoin(SHIPBOT_API_HOST, '/deployment')
         method = 'POST'
@@ -110,7 +116,8 @@ def main(argv):
             'type': os.getenv('SHIPBOT_TYPE', 'STANDARD'),
             'artifactId': artifact_id,
             'commitSha': commit_sha,
-            'user': user
+            'user': user,
+            'branch': branch
         }
 
         # Add optional fields if they exist

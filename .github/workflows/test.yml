@@ -22,7 +22,8 @@ jobs:
           apiHost: ${{ secrets.SHIPBOT_API_HOST }}
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
           artifactConfig: shipbot.json
-          commitSha: 1234567890
+          commitSha: 6666
+          branch: develop
           user: ${{ github.actor }}
           environment: PRODUCTION
           version: 0.0.1
@@ -42,6 +43,7 @@ jobs:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
           artifactConfig: shipbot.json
           environment: PRODUCTION
+          branch: main
           version: 0.0.1
           status: STARTED
           user: ${{ github.actor }}
