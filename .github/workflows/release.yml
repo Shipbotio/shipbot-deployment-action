@@ -2,58 +2,25 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'  # Matches v1.0.0, v2.1.0, etc.
+      - '*'
 
 jobs:
-  release:
+  create-release:
+    name: Create GitHub Release
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
-          fetch-depth: 0  # Fetch all history for tags
-
-      # Get latest patch version for auto-incrementing
-      - name: Get latest patch version
-        id: get_latest
-        if: github.ref == 'refs/heads/master'
-        run: |
-          # Get latest 0.0.x tag
-          LATEST=$(git tag -l 'v0.0.*' | sort -V | tail -n 1)
-          if [ -z "$LATEST" ]; then
-            echo "version=0.0.1" >> $GITHUB_OUTPUT
-          else
-            PATCH=${LATEST##*.}
-            NEXT=$((PATCH + 1))
-            echo "version=0.0.$NEXT" >> $GITHUB_OUTPUT
-          fi
-
-      # For manual tag releases, extract version parts
-      - name: Get version from tag
-        id: get_version
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          MAJOR=${VERSION%%.*}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "major=$MAJOR" >> $GITHUB_OUTPUT
-
-      # Create new patch release for master pushes
-      - name: Create patch release
-        if: github.ref == 'refs/heads/master'
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
-          git tag -a v${{ steps.get_latest.outputs.version }} -m "Release v${{ steps.get_latest.outputs.version }}"
-          git push origin v${{ steps.get_latest.outputs.version }}
-
-      # Update major version tag for manual releases
-      - name: Update major version tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
-          git tag -fa v${{ steps.get_version.outputs.major }} -m "Update v${{ steps.get_version.outputs.major }} tag"
-          git push origin v${{ steps.get_version.outputs.major }} --force
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: "Automated release for tag ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
