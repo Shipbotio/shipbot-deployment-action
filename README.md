@@ -81,6 +81,7 @@ jobs:
 
       # Start a new deployment
       - name: Log Deployment
+        id: log_deployment
         uses: Shipbotio/shipbot-deployment-action@v2.0.2
         with:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
