@@ -13,7 +13,7 @@ inputs:
     required: true
   artifactConfig:
     description: 'Path to service configuration JSON file containing artifactId'
-    required: true
+    required: false
   commitSha:
     description: 'Commit for the deployment.'
     required: false

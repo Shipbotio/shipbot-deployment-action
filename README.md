@@ -14,7 +14,11 @@ Within your artifact directory you can create a `shipbot.json` file to configure
 
 This should then be passed to the action using the `artifactConfig` parameter.
 
-## Inputs
+## Creating a new deployment
+
+The following parameters are required when creating a new deployment.
+
+If you wish to start a deployment to later end it at after the deployment has finished you can set the `status` parameter to `STARTED` and then finish it later.
 
 | Parameter     | Required | Description |
 | ------------ | -------- | ----------- |
@@ -31,6 +35,16 @@ This should then be passed to the action using the `artifactConfig` parameter.
 | `link`       | ❌       | This should link to an external place where more action on the deployment can take place for example it could be the deployment job in your CI/CD pipeline. |
 | `type`       | ❌       | This is a enum describing the deployment strategy. The only option right now is SIMPLE. |
 | `logLevel`   | ❌       | Log level (DEBUG, INFO, WARNING, ERROR). |
+
+## Finishing a deployment
+
+The following parameters are required when finishing a deployment.
+
+| Parameter     | Required | Description |
+| ------------ | -------- | ----------- |
+| `apiKey`     | ✅       | Shipbot API key (found in Settings). |
+| `deploymentId`| ✅       | The ID of the deployment to finish. |
+| `status`     | ✅       | One of `SUCCEEDED`, `FAILED`. |
 
 ## Example usage
 
@@ -65,9 +79,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Log deployment
+      # Start a new deployment
       - name: Log Deployment
-        uses: Shipbotio/shipbot-deployment-action@v2.0.1
+        uses: Shipbotio/shipbot-deployment-action@v2.0.2
         with:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
           artifactConfig: shipbot.json
@@ -79,17 +93,16 @@ jobs:
           user: ${{ github.actor }}
           status: "STARTED"
 
-      # Deploy Lambda function
       - name: Deploy Code
         run: |
           echo "Deploying code."
 
+      # Finish the deployment
       - name: Mark deployment as succeeded
         if: always()
-        uses: Shipbotio/shipbot-deployment-action@v2.0.1
+        uses: Shipbotio/shipbot-deployment-action@v2.0.2
         with:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
-          artifactConfig: shipbot.json
           deploymentId: ${{ steps.log_deployment.outputs.deploymentId }}
           status: ${{ job.status == 'success' && 'SUCCEEDED' || 'FAILED' }}
 ```
