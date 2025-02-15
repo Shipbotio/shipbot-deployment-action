@@ -67,7 +67,7 @@ jobs:
 
       # Log deployment
       - name: Log Deployment
-        uses: Shipbotio/shipbot-deployment-action@v1
+        uses: Shipbotio/shipbot-deployment-action@v2.0.1
         with:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
           artifactConfig: shipbot.json
@@ -86,9 +86,10 @@ jobs:
 
       - name: Mark deployment as succeeded
         if: always()
-        uses: Shipbotio/shipbot-deployment-action@v1
+        uses: Shipbotio/shipbot-deployment-action@v2.0.1
         with:
           apiKey: ${{ secrets.SHIPBOT_API_KEY }}
+          artifactConfig: shipbot.json
           deploymentId: ${{ steps.log_deployment.outputs.deploymentId }}
           status: ${{ job.status == 'success' && 'SUCCEEDED' || 'FAILED' }}
 ```
